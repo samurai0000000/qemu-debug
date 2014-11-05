@@ -6,6 +6,7 @@ AVD ?=			qemu-debug
 
 DEPOBJS = \
 	out/host/linux-x86/bin/acp \
+	out/target/product/goldfish/system.img \
 	out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/export_includes \
 	out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates/export_includes \
 	out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates/export_includes \
@@ -37,17 +38,22 @@ clean_kernel:
 .PHONY: run-qemu
 
 run-qemu: out/host/linux-x86/bin/emulator64-arm kernel/goldfish/arch/arm/boot/zImage
-	out/host/linux-x86/bin/emulator64-arm -avd $(AVD) -gpu on -kernel kernel/goldfish/arch/arm/boot/zImage -system qemu-debug/img/system.img -ramdisk qemu-debug/img/ramdisk.img  -memory 1024 -partition-size 800 
+	out/host/linux-x86/bin/emulator64-arm -avd $(AVD) -gpu on -kernel kernel/goldfish/arch/arm/boot/zImage -system out/target/product/goldfish/system.img -ramdisk qemu-debug/img/ramdisk.img  -memory 1024 -partition-size 800 -show-kernel -shell
 
-.PHONY: clean
+.PHONY: distclean
 
-clean:
+distclean:
 	rm -rf out
 
 # DEPOBJS
 
 out/host/linux-x86/bin/acp: qemu-debug/bin/acp
-	mkdir -p out/host/linux-x86/bin && cp $< $@
+	mkdir -p $(dir $@) && cp $< $@
+
+out/target/product/goldfish/system.img:
+	mkdir -p $(dir $@) && \
+	curl "http://www.selfso.com/~samurai/qemu-debug/system.img.bz2" -o $(dir $@)/system.img.bz2 && \
+	bunzip2 $(dir $@)/system.img.bz2
 
 out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/export_includes:
 	mkdir -p $(dir $@)
