@@ -2,22 +2,21 @@
 
 CROSS_COMPILE ?=	arm-none-linux-gnueabi-
 
+AVD ?=			qemu-debug
+
+DEPOBJS = \
+	out/host/linux-x86/bin/acp \
+	out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/export_includes \
+	out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates/export_includes \
+	out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates/export_includes \
+	out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDLmain_intermediates/export_includes
+
 .PHONY: qemu
 
-qemu: out/host/linux-x86/bin/acp
-	mkdir -p out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates
-	touch out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/export_includes
-	mkdir -p out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates
-	touch out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates/export_includes
-	mkdir -p out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates
-	touch out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates/export_includes
-	mkdir -p out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDLmain_intermediates
-	touch out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDLmain_intermediates/export_includes
-	cp prebuilts/tools/linux-x86/sdl/libs/libSDL.a out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/
-	cp prebuilts/tools/linux-x86/sdl/libs/libSDLmain.a out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates/
-	cp prebuilts/tools/linux-x86/sdl/libs/lib64SDL.a out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates/
-	cp prebuilts/tools/linux-x86/sdl/libs/lib64SDLmain.a out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDLmain_intermediates/
-	cd external/qemu && ONE_SHOT_MAKEFILE=external/qemu/Android.mk $(MAKE) -C $(TOP) -f build/core/main.mk all_modules
+qemu:  out/host/linux-x86/bin/emulator64-arm
+
+out/host/linux-x86/bin/emulator64-arm: $(DEPOBJS)
+	cd external/qemu && ONE_SHOT_MAKEFILE=external/qemu/Android.mk $(MAKE) -C $(TOP) -f build/core/main.mk all_modules $@
 
 .PHONY: kernel
 
@@ -37,13 +36,35 @@ clean_kernel:
 
 .PHONY: run-qemu
 
-run-qemu: kernel/goldfish/arch/arm/boot/zImage
-	out/host/linux-x86/bin/emulator --to-be-fixed kernel/goldfish/arch/arm/boot/zImage
+run-qemu: out/host/linux-x86/bin/emulator64-arm kernel/goldfish/arch/arm/boot/zImage
+	out/host/linux-x86/bin/emulator64-arm -avd $(AVD) -gpu on -kernel kernel/goldfish/arch/arm/boot/zImage -system qemu-debug/img/system.img -ramdisk qemu-debug/img/ramdisk.img  -memory 1024 -partition-size 800 
 
 .PHONY: clean
 
 clean:
 	rm -rf out
 
+# DEPOBJS
+
 out/host/linux-x86/bin/acp: qemu-debug/bin/acp
 	mkdir -p out/host/linux-x86/bin && cp $< $@
+
+out/host/linux-x86/obj/STATIC_LIBRARIES/libSDL_intermediates/export_includes:
+	mkdir -p $(dir $@)
+	touch $@
+	cp prebuilts/tools/linux-x86/sdl/libs/libSDL.a $(dir $@)
+
+out/host/linux-x86/obj/STATIC_LIBRARIES/libSDLmain_intermediates/export_includes:
+	mkdir -p $(dir $@)
+	touch $@
+	cp prebuilts/tools/linux-x86/sdl/libs/libSDLmain.a $(dir $@)
+
+out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDL_intermediates/export_includes:
+	mkdir -p $(dir $@)
+	touch $@
+	cp prebuilts/tools/linux-x86/sdl/libs/lib64SDL.a $(dir $@)
+
+out/host/linux-x86/obj/STATIC_LIBRARIES/lib64SDLmain_intermediates/export_includes:
+	mkdir -p $(dir $@)
+	touch $@
+	cp prebuilts/tools/linux-x86/sdl/libs/lib64SDLmain.a $(dir $@)
