@@ -35,10 +35,13 @@ kernel/goldfish/.config: kernel/goldfish/arch/arm/configs/goldfish_armv7_defconf
 clean_kernel:
 	$(MAKE) -C kernel/goldfish mrproper
 
-.PHONY: run-qemu
+.PHONY: run-qemu run-qemu-debug
 
 run-qemu: out/host/linux-x86/bin/emulator64-arm kernel/goldfish/arch/arm/boot/zImage
 	out/host/linux-x86/bin/emulator64-arm -avd $(AVD) -gpu on -kernel kernel/goldfish/arch/arm/boot/zImage -system out/target/product/goldfish/system.img -ramdisk qemu-debug/img/ramdisk.img  -memory 1024 -partition-size 800 -show-kernel -shell
+
+run-qemu-debug: out/host/linux-x86/bin/emulator64-arm kernel/goldfish/arch/arm/boot/zImage
+	out/host/linux-x86/bin/emulator64-arm -avd $(AVD) -gpu on -kernel kernel/goldfish/arch/arm/boot/zImage -system out/target/product/goldfish/system.img -ramdisk qemu-debug/img/ramdisk.img  -memory 1024 -partition-size 800 -show-kernel -shell -debuglowlevel cpu
 
 .PHONY: distclean
 
